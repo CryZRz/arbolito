@@ -20,6 +20,10 @@ public class ABB {
     }
 
     private boolean add(NodoA r, int n) {
+        if (find(n) != null) {
+            return false;
+        }
+        
         if (raiz == null) {
             raiz = new NodoA(n);
             return true;
@@ -61,6 +65,8 @@ public class ABB {
      * @nodo nodo raiz que presenta el desequilibro
      */
     public void RSD(NodoA nodo){
+        System.out.println("Rotacion simple derecha RSD");
+
         NodoA nuevaRaiz = nodo.getIzq();
         NodoA nuevaRaizDer = nuevaRaiz.getDer();
 
@@ -94,6 +100,8 @@ public class ABB {
      * @nodo nodo raiz que presenta el desequilibro
      */
     public void RSI(NodoA nodo){
+        System.out.println("Rotacion simple izquierda RSI");
+
         NodoA nuevaRaiz = nodo.getDer();
         NodoA nuevaRaizIzq = nuevaRaiz.getIzq();
 
@@ -126,6 +134,7 @@ public class ABB {
      * @param nodo nodo que presenta el desbalance
      */
     public void RDI(NodoA nodo){
+        System.out.println("Rotacion doble izquierda RDI");
         NodoA nodoToMove = nodo.getIzq().getDer();
 
         //primera rotacion
@@ -160,6 +169,7 @@ public class ABB {
     }
 
     public void RDD(NodoA nodo){
+        System.out.println("Rotacion doble izquierda RDD");
         NodoA nodoToMove = nodo.getDer().getIzq();
 
         //primera rotacion
@@ -198,27 +208,115 @@ public class ABB {
 
     public void balancear(NodoA nodo){
         if (nodo != null) {
-            if (nodo.getPadre() != null) {
-                int equilibrioPadre = this.equilibrio(nodo.getPadre());
-                int equilibrioActual = this.equilibrio(nodo);
-
-                if (equilibrioPadre < -1 && equilibrioActual < 0) {
-                    this.RSD(nodo.getPadre());
+            int equilibrioPadre = this.equilibrio(nodo);
+            if (equilibrioPadre <= -2) {
+                if (this.equilibrio(nodo.getIzq()) <= -1) {
+                    this.RSD(nodo);
                 }
-                else if (equilibrioPadre > 1 && equilibrioActual > 0) {
-                    this.RSI(nodo.getPadre());
+                else if(this.equilibrio(nodo.getIzq()) >= 1){
+                    this.RDI(nodo);
                 }
-                else if (equilibrioPadre < -1 && equilibrioActual > 0) {
-                    this.RDI(nodo.getPadre());
+            }
+            else if (equilibrioPadre >= 2) {
+                if (this.equilibrio(nodo.getDer()) >= 1) {
+                    this.RSI(nodo);
                 }
-                else if (equilibrioPadre > 1 && equilibrioActual < 0) {
-                    this.RDD(nodo.getPadre());
+                else if(this.equilibrio(nodo.getDer()) <= -1){
+                    this.RDD(nodo);
                 }
-                balancear(nodo.getPadre()); 
+            }else{
+                balancear(nodo.getPadre());
             }
         }else{
             return;
         }
+    }
+
+    public NodoA eliminar(int num){
+        NodoA nodoFind = this.find(num); 
+        if (nodoFind != null) {
+            //Caso 1 el nodo no tiene hijos
+            if (nodoFind.getDer() == null && nodoFind.getIzq() == null) {
+                this.eliminarCasoUno(nodoFind);
+            }
+            //Caso dos el nodo solo tiene un hijo
+            else if (nodoFind.getIzq() != null && nodoFind.getDer() == null) {
+                this.eliminarCasoDosIzq(nodoFind);
+            }
+            else if (nodoFind.getDer() != null && nodoFind.getIzq() == null) {
+                this.eliminarCasoDosDer(nodoFind);
+            }
+            //Caso 3 el nodo tiene dos hijos
+            else if(nodoFind.getDer() != null && nodoFind.getIzq() != null){
+                this.eliminarCasoTres(nodoFind);
+            }
+            this.balancear(nodoFind);
+        };
+
+        return nodoFind;
+    }
+
+    private NodoA eliminarCasoUno(NodoA nodo){
+        if (nodo.getPadre() != null) {
+            if (nodo.getPadre().getIzq() == nodo) {
+                nodo.getPadre().setIzq(null);
+            }else{
+                nodo.getPadre().setDer(null);
+            }
+        }else{
+            this.raiz = null;
+        }
+
+        return nodo;
+    }
+    
+    private NodoA eliminarCasoDosDer(NodoA nodo){
+        nodo.getDer().setPadre(nodo.getPadre());
+        if (nodo.getPadre().getIzq() == nodo) {
+            nodo.getPadre().setIzq(nodo.getDer());
+        }else{
+            nodo.getPadre().setDer(nodo.getDer());
+        }
+
+        return nodo;
+    }
+
+    private NodoA eliminarCasoDosIzq(NodoA nodo){
+        nodo.getIzq().setPadre(nodo.getPadre());
+        if (nodo.getPadre().getIzq() == nodo) {
+            nodo.getPadre().setIzq(nodo.getIzq());
+        }else{
+            nodo.getPadre().setDer(nodo.getIzq());
+        }
+
+        return nodo;
+    }
+
+    private NodoA eliminarCasoTres(NodoA nodo){
+        NodoA minDer = findMin(nodo.getDer());
+        this.eliminar(minDer.getInfo());
+        
+        if (nodo.getDer() != null) {
+            nodo.getDer().setPadre(minDer);
+        }
+        nodo.getIzq().setPadre(minDer);
+        
+        minDer.setDer(nodo.getDer());
+        minDer.setIzq(nodo.getIzq());
+        
+        minDer.setPadre(nodo.getPadre());
+        
+        if (nodo.getPadre() != null) {
+            if (nodo.getPadre().getIzq() == nodo) {
+                nodo.getPadre().setIzq(minDer);
+            }else{
+                nodo.getPadre().setDer(minDer);
+            }
+        }else{
+            this.raiz = minDer;
+        }
+
+        return nodo;
     }
 
     @Override
@@ -310,6 +408,18 @@ public class ABB {
             }
         }else{
             return null;
+        }
+    }
+
+    public NodoA findMin(){
+        return this.findMin(this.raiz);
+    }
+
+    private NodoA findMin(NodoA main){
+        if(main.getIzq() != null){
+            return findMin(main.getIzq());
+        }else{
+            return main;
         }
     }
 }
